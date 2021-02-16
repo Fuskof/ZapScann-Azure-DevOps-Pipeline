@@ -3,9 +3,8 @@ trigger:
 - master
 
 pool:
-  name: zap-pipeline
+  name: Azure-Pipeline
   vmImage: 'ubuntu-20.04'
-
 
 steps:
  - task: Bash@3
