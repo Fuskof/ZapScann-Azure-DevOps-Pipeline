@@ -3,7 +3,6 @@ trigger:
 - master
 
 pool:
-  name: Azure-Pipeline
   vmImage: 'ubuntu-20.04'
 
 steps:
