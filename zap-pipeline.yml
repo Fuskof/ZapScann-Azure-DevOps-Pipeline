@@ -11,4 +11,4 @@ steps:
     script: 'docker run -p 8090:8090 -d -i owasp/zap2docker-stable zap.sh -daemon -port 8090 -host 0.0.0.0'
 - task: CmdLine@2
   inputs:
-    script: 'cd $(Agent.BuildDirectory) && ls -a '
+    script: 'cd $(Agent.BuildDirectory)/s && ls -a '
