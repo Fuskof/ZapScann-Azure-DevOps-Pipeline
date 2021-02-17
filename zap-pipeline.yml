@@ -8,7 +8,7 @@ pool:
 steps:
 - task: CmdLine@2
   inputs:
-    script: 'docker run -p 8090:8090 -i owasp/zap2docker-stable zap.sh -daemon -port 8090 -host 0.0.0.0'
+    script: 'docker run -p 8090:8090 -d -i owasp/zap2docker-stable zap.sh -daemon -port 8090 -host 0.0.0.0'
 - task: CmdLine@2
   inputs:
     script: 'mvn clean verify -DappConfig="AppConfigQA.properties" -Dserenity.proxy.http="127.0.0.1" -Dserenity.proxy.http_port="7777" -Dcucumber.filter.tags="@debug" -Dcucumber.features="$(Build.Repository.LocalPath)/smartHub-bdd/src/test/resources/features"'
