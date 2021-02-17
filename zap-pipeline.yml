@@ -8,4 +8,4 @@ pool:
 steps:
 - task: CmdLine@2
   inputs:
-    script: 'cd $(Agent.BuildDirecotry) ls -a && cd s && ls -a'
+    script: 'cd $(Agent.BuildDirectory) && ls -a && cd s && ls -a'
