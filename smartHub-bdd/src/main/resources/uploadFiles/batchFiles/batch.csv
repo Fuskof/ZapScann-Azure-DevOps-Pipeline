@@ -1,0 +1,7 @@
+rqst_hdr;1.0;merchant_riefr4vjnl;1234556777;2
+auth_dtl;1;DEBIT;360;EUR;Snikers;creditcard;ECOM;shop ref - 11223;Snikers - 11223;customer_nj0olqbwfb;persona_qtlv8a9t7j;address_6khk2zwlvl;address_6khk2zwlvl;paymentinstrument_inhdvwukxa;
+item_dtl;112233-e;10;10;100;20;12;120;Snikers
+item_dtl;112233-e;20;10;100;20;12;2400;Snikers2
+auth_dtl;3;DEBIT;1000;EUR;blanket;creditcard;ECOM;shop ref - bl1;Blanket - 1;customer_nj0olqbwfb;persona_qtlv8a9t7j;address_6khk2zwlvl;address_6khk2zwlvl;paymentinstrument_inhdvwukxa;
+item_dtl;bl-1;1;1000;1000;0;100;1000;Blanket
+rqst_trl;2

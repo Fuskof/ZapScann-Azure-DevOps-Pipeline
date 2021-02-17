@@ -1,0 +1,15 @@
+package smart.hub.mappings.api.models.request.adminAPI.integrationManager;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Getter;
+import lombok.Setter;
+import smart.hub.helpers.generators.GenerateValue;
+
+@Getter
+@Setter
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class UpdateConfigurationsRequestModel {
+
+    @GenerateValue(type = ConfigurationItem.class)
+    private Object configurationItem;
+}
