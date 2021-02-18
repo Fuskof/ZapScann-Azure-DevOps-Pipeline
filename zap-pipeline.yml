@@ -8,4 +8,4 @@ pool:
 steps:
 - task: CmdLine@2
   inputs:
-    script: 'cd $(Agent.BuildDirectory) && ls -a && cd s && ls -a && smartHub-bdd && ls -a'
+    script: 'cd $(Agent.BuildDirectory) && ls -a && cd s && ls -a && cd smartHub-bdd && ls -a'
