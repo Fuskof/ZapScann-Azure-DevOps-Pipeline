@@ -26,3 +26,4 @@ steps:
 - task: CmdLine@2
   inputs:
     script: 'docker exec ZAPTESTS zap-cli -p 8090 status -t 120'
+  displayName: Checking zap status inside the container
