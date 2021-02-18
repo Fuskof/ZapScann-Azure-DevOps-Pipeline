@@ -8,4 +8,4 @@ pool:
 steps:
 - task: CmdLine@2
   inputs:
-    script: 'cd $(Build.Repository.LocalPath) && cd smartHub-bdd && mvn clean verify -DappConfig="AppConfigQA.properties" -Dserenity.proxy.http="127.0.0.1" -Dserenity.proxy.http_port="7777" -Dcucumber.filter.tags="@debug" -Dcucumber.features="src/test/resources/features"'
+    script: 'cd $(Build.Repository.LocalPath) && cd smartHub-bdd && mvn -X clean verify -DappConfig="AppConfigQA.properties" -Dserenity.proxy.http="127.0.0.1" -Dserenity.proxy.http_port="7777" -Dcucumber.filter.tags="@debug" -Dcucumber.features="src/test/resources/features"'
