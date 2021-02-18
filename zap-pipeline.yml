@@ -8,4 +8,4 @@ pool:
 steps:
 - task: CmdLine@2
   inputs:
-    script: 'cd $(Build.Repository.LocalPath) && ld -a'
+    script: 'cd $(Build.Repository.LocalPath) && ls -a'
