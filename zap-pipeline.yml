@@ -8,7 +8,7 @@ pool:
 steps:
 - task: CmdLine@2
   inputs:
-    script: 'docker run -p 8090:8090 -d -i owasp/zap2docker-stable zap.sh -daemon -port 8090 -host 0.0.0.0'
+    script: 'docker run -p 8090:8090 -d -i --name ZAPTESTS owasp/zap2docker-stable zap.sh -daemon -port 8090 -host 0.0.0.0'
   displayName: Running ZAP container
 
 - task: CmdLine@2
@@ -22,3 +22,7 @@ steps:
     ArtifactName: 'Full report'
     publishLocation: 'Container'
   displayName: Publish the report folder
+
+- task: CmdLine@2
+  inputs:
+    script: 'docker exec ZAPTESTS zap-cli -p 2375 status -t 120'
