@@ -7,7 +7,6 @@ Feature: Refund request validation
   @DISE-982 @TC-1714
   Scenario Outline: Refund transaction - validate error code <fieldErrorCode> and associated error message
     Given I send a 'debit' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'refund' a transaction with specific fields:
       | <fieldPath> | <fieldValue> |
@@ -67,7 +66,6 @@ Feature: Refund request validation
   @DISE-982 @TC-1714
   Scenario Outline: Refund transaction - validate basket field with error code <fieldErrorCode> and associated error message
     Given I send a 'preauth' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'refund' a transaction with specific fields:
       | <fieldPath>     | <fieldValue> |
@@ -83,7 +81,6 @@ Feature: Refund request validation
   @DISE-982 @TC-1714
   Scenario: Refund transaction - validate multiple error codes and associated error messages
     Given I send a 'preauth' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'refund' a transaction with specific fields:
       | initialAmount           | {-INT:2}     |
@@ -102,7 +99,6 @@ Feature: Refund request validation
   @DISE-982 @TC-1713 @pending
   Scenario Outline: Refund transaction - validate values for fields with sets of accepted inputs
     Given I send a 'preauth' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'refund' a transaction with specific fields:
       | <fieldPath> | <fieldValue> |
@@ -120,7 +116,6 @@ Feature: Refund request validation
   @DISE-982 @TC-1713 @pending
   Scenario: Refund transaction - validate accepted values for optional fields
     Given I send a 'preauth' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'refund' a transaction with specific fields:
       | description        | {FAKER:CHUCKNORRIS.FACT} |

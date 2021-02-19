@@ -17,6 +17,7 @@ import smart.hub.components.ConnectionState;
 import smart.hub.components.ResultState;
 import smart.hub.helpers.Conversions;
 import smart.hub.helpers.generators.JsonObjectGenerator;
+import smart.hub.helpers.generators.JsonValueGenerator;
 import smart.hub.mappings.api.enums.proxyAPI.transaction.ChannelType;
 import smart.hub.mappings.api.enums.proxyAPI.transaction.Currency;
 import smart.hub.mappings.api.enums.proxyAPI.transaction.ProductType;
@@ -59,22 +60,34 @@ public class ProxyApiSteps {
 
     @Given("I send a {string} transaction request with random fields")
     public void iSendATransactionRequestWithRandomFields(String transactionType) throws Exception {
-        sendTransactionRequest(transactionType, null, true);
+        sendTransactionRequest(transactionType, null, true, null, null);
     }
 
     @Given("I send a {string} transaction request with specific fields:")
     public void iSendADebitPreauthTransactionRequestWithSpecificFields(String transactionType, @Transpose DebitPreauthRequestModel json) throws Exception {
-        sendTransactionRequest(transactionType, json, true);
+        sendTransactionRequest(transactionType, json, true, null, null);
     }
 
     @When("I {string} a transaction with specific fields:")
     public void iCancelCaptureRefundTransactionRequestWithSpecificFields(String transactionType, @Transpose CancelCaptureRefundRequestModel json) throws Exception {
-        sendTransactionRequest(transactionType, json, true);
+        sendTransactionRequest(transactionType, json, true, null, null);
+    }
+
+    @When("I send a {string} transaction request with custom path parameters:")
+    public void iSendCancelCaptureRefundRequestWithCustomPathParams (String transactionType, DataTable input) throws Exception {
+        Map<String, String> originalMap = input.asMap(String.class, String.class);
+        HashMap<String, String> map = new HashMap<>();
+        map.putAll(originalMap);
+        JsonValueGenerator jsonValueGenerator = new JsonValueGenerator();
+        String orderId = jsonValueGenerator.generateJsonValue(map.get("orderId")).getStringValue();
+        jsonValueGenerator = new JsonValueGenerator();
+        String transactionId = jsonValueGenerator.generateJsonValue(map.get("transactionId")).getStringValue();
+        sendTransactionRequest(transactionType, null, true, orderId, transactionId);
     }
 
     @Given("I send a {string} transaction request with no authorization")
     public void iSendATransactionRequestWithNoAuthorization(String transactionType) throws Exception {
-        sendTransactionRequest(transactionType, null, false);
+        sendTransactionRequest(transactionType, null, false, null, null);
     }
 
     @Then("the response contains error code {int}")
@@ -234,16 +247,15 @@ public class ProxyApiSteps {
         connectionState.setToken(authHeader);
     }
 
-    private void sendTransactionRequest(String transactionType, Object json, boolean hasAuth) throws Exception {
+    private void sendTransactionRequest(String transactionType, Object json, boolean hasAuth,
+                                        String orderId, String transactionId) throws Exception {
         String endpoint;
-        TransactionResponseModel response = connectionService.convertJsonToModel(resultState.getResult(), TransactionResponseModel.class);
-        String orderId = null;
-        String transactionId = null;
-        try {
-            orderId = response.getOrderId();
-            transactionId = response.getMeta().getThreeDsData().getAuthenticationResult().getTransactionId();
+        if (Objects.isNull(orderId)) {
+            orderId = Serenity.sessionVariableCalled("orderId");
         }
-        catch (NullPointerException e){};
+        if (Objects.isNull(transactionId)) {
+            transactionId = Serenity.sessionVariableCalled("transactionId");
+        }
         switch (transactionType.toLowerCase()) {
             case "debit":
                 endpoint = ENDPOINT_DEBIT_TRANSACTION;
@@ -254,6 +266,11 @@ public class ProxyApiSteps {
                     debitJson = (DebitPreauthRequestModel) json;
                 }
                 connectionService.getResponseForPOST(endpoint, connectionService.convertToJson(debitJson), hasAuth);
+                TransactionResponseModel debitResponse = connectionService.convertJsonToModel(resultState.getResult(), TransactionResponseModel.class);
+                if (resultState.getStatusCode() == 200) {
+                    Serenity.setSessionVariable("orderId").to(debitResponse.getOrderId());
+                    Serenity.setSessionVariable("transactionId").to(debitResponse.getMeta().getThreeDsData().getAuthenticationResult().getTransactionId());
+                }
                 break;
             case "pre-auth":
             case "preauth":
@@ -265,6 +282,11 @@ public class ProxyApiSteps {
                     preauthJson = (DebitPreauthRequestModel) json;
                 }
                 connectionService.getResponseForPOST(endpoint, connectionService.convertToJson(preauthJson), hasAuth);
+                TransactionResponseModel preauthResponse = connectionService.convertJsonToModel(resultState.getResult(), TransactionResponseModel.class);
+                if (resultState.getStatusCode() == 200) {
+                    Serenity.setSessionVariable("orderId").to(preauthResponse.getOrderId());
+                    Serenity.setSessionVariable("transactionId").to(preauthResponse.getMeta().getThreeDsData().getAuthenticationResult().getTransactionId());
+                }
                 break;
             case "cancel":
                 endpoint = ENDPOINT_CANCEL_TRANSACTION.replace("{orderId}", orderId).replace("{transactionId}", transactionId);

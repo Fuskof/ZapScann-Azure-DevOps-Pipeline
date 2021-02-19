@@ -4,7 +4,7 @@ Feature: Activate Merchant Account
   I want to activate merchant account on Smart Hub
   So that this Merchant is able to proceed transactions
 
-  @DISE-1008
+  @DISE-1008 @DISE-175
   Scenario: Activate child Merchant Account
     Given I send request to get external merchants
     And I save all merchants with status 'New' and hasChildren set to 'true'

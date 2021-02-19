@@ -31,14 +31,10 @@ public final class Constants {
     /*ADMIN API Endpoints */
     public final static String ENDPOINT_UPDATE_INTEGRATION_MANAGER_CONFIGURATIONS = ENDPOINT_ADMIN_API + "/IntegrationManager/UpdateIntegrationManagerConfigurations";
     public final static String ENDPOINT_GET_INTEGRATION_MANAGER_CONFIGURATIONS = ENDPOINT_ADMIN_API + "/IntegrationManager/GetIntegrationManagerConfigurations?ConfigurationKey=";
-    public final static String ENDPOINT_RULES_CONFIGURATION_SAVE = ENDPOINT_ADMIN_API + "/RulesConfiguration/Save";
-    public final static String ENDPOINT_RULES_CONFIGURATION_GET = ENDPOINT_ADMIN_API + "/RulesConfiguration/Get?id=";
-    public final static String ENDPOINT_RULES_CONFIGURATION_PUBLISH = ENDPOINT_ADMIN_API + "/RulesConfiguration/Publish?ruleId=";
     public final static String ENDPOINT_RULES_TEMPLATE_SAVE = ENDPOINT_ADMIN_API + "/RuleTemplates/divRuleEditor";
     public final static String ENDPOINT_RULES_TEMPLATE_EDIT = ENDPOINT_ADMIN_API + "/RuleTemplates/divRuleEditor";
     public final static String ENDPOINT_RULES_TEMPLATE_GET_ALL = ENDPOINT_ADMIN_API + "/RuleTemplates";
     public final static String ENDPOINT_GET_MERCHANTS = ENDPOINT_ADMIN_API + "/Merchant?status=";
-    public final static String ENDPOINT_CHANGE_MERCHANT_STATUS = ENDPOINT_ADMIN_API + "/OnboardingMerchant/changeMerchantStatus";
     public final static String ENDPOINT_PUBLISH_RULES_TEMPLATES = ENDPOINT_ADMIN_API + "/RuleTemplates/publish";
     public final static String ENDPOINT_PUBLISHED_RULE_TEMPLATE_BY_ID = ENDPOINT_ADMIN_API + "/RuleTemplates/searchPublishedRuleTemplates?textToSearch=";
     public final static String ENDPOINT_SEARCH_RULE_TEMPLATE_BY_CRITERIA = ENDPOINT_ADMIN_API + "/RuleTemplates?searchTxt={text}&type={type}&status={status}";

@@ -8,7 +8,7 @@ import smart.hub.helpers.generators.GenerateValue;
 @Setter
 public class BaseTransactionRequestModel {
 
-    @GenerateValue(type = Long.class, value = "{LONG:500..1500}")
+    @GenerateValue(type = Long.class, value = "{LONG:6..999}")
     private Object initialAmount;
 
     @GenerateValue("EUR")

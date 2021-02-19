@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 
 @Configurable
@@ -80,5 +81,12 @@ public class CoreSteps {
     public void theBodyOfTheResponseContains(boolean isValid) {
         boolean responseStatus = Boolean.valueOf(resultState.getResult());
         assertThat(responseStatus).isEqualTo(isValid);
+    }
+
+    @Then("the response body is:")
+    public void theResponseBodyIs (List<String> input) {
+        String expectedResponse = input.get(0);
+        String actualResponse = resultState.getResult();
+        org.hamcrest.MatcherAssert.assertThat("Received an incorrect response", expectedResponse, is(actualResponse));
     }
 }

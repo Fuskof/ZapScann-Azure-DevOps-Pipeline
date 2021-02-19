@@ -15,7 +15,6 @@ Feature: Payengine simulator
   @DISE-569
   Scenario: Debit transaction with Success response
     Given I send a debit trx to Payengine simulator with the following fields
-      | initialAmount | {INT:3..1000} |
       | currency      | EUR           |
     Then the status code should be '200'
     And the body of the 'debit' response contains the appropriate values for status

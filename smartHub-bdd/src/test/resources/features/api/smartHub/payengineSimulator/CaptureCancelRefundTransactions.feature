@@ -15,8 +15,7 @@ Feature: Payengine simulator
   @DISE-958 @DISE-1107
   Scenario: Cancel transaction with Succes response
     Given I send a 'cancel' trx to Payengine simulator with the following fields
-      | initialAmount | {INT:6..1000} |
-      | currency      | EUR           |
+      | currency | EUR |
     Then the status code should be '200'
     And the body of the 'cancel' response contains the appropriate values for status
       | status | SUCCESS |
@@ -33,8 +32,7 @@ Feature: Payengine simulator
   @DISE-958 @DISE-1109
   Scenario: Capture transaction with Success response
     Given I send a 'capture' trx to Payengine simulator with the following fields
-      | initialAmount | {INT:6..1000} |
-      | currency      | USD           |
+      | currency | USD |
     Then the status code should be '200'
     And the body of the 'capture' response contains the appropriate values for status
       | status | SUCCESS |
@@ -42,7 +40,7 @@ Feature: Payengine simulator
   @DISE-985 @DISE-1692
   Scenario: Refund transaction - expected status SUCCESS
     Given I send a 'refund' trx to Payengine simulator with the following fields
-      | initialAmount | {INT:6..1000} |
+      | currency | EUR |
     Then the status code should be '200'
     And the body of the 'refund' response contains the appropriate values for status
       | status | SUCCESS |

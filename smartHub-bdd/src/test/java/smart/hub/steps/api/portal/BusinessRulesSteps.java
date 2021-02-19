@@ -66,6 +66,12 @@ public class BusinessRulesSteps {
     @SneakyThrows
     @Given("I send post request to create new business rule template with fields:")
     public void iSendPostRequestToCreateNewBusinessRuleTemplateWithFields(@Transpose RuleTemplateSaveRequestModel json) throws Exception {
+
+        if (json.getName().toString().equals("SAME_NAME"))
+            json.setName(Serenity.sessionVariableCalled("ruleTemplateSameName"));
+        else
+            Serenity.setSessionVariable("ruleTemplateSameName").to(json.getName().toString());
+
         String ruleXML = json.getRuleXml().toString();
         //random id is the last 6 digits from the ruleXML ID
         if (ruleXML.contains("{randomId}")) {
@@ -143,7 +149,7 @@ public class BusinessRulesSteps {
 
     @Then("^I send get request for receive list of all rule templates$")
     public void iSendGetRequestForReceiveListOfAllRuleTemplates() throws Exception {
-        connectionService.getResponseForGET(ENDPOINT_RULES_TEMPLATE_GET_ALL);
+        connectionService.getResponseForGET(ENDPOINT_RULES_TEMPLATE_GET_ALL +"?page=1&pageSize=10&sortBy=CreatedOn&order=descend");
         Serenity.setSessionVariable("previousRequestMap").to(resultState);
     }
 
@@ -158,7 +164,7 @@ public class BusinessRulesSteps {
         if (putRequest.equals("valid")) {
             arrayId[0] = Serenity.sessionVariableCalled("RuleTemplateId");
         } else if (putRequest.equals("empty")) arrayId[0] = "";
-        else if (putRequest.equals("wrong")) arrayId[0] = "ZAQ__!@#";
+        else if (putRequest.equals("wrong")) arrayId[0] = "Wronq_Request";
 
         connectionService.getResponseForPATCH(ENDPOINT_PUBLISH_RULES_TEMPLATES, arrayId);
     }
@@ -207,14 +213,14 @@ public class BusinessRulesSteps {
 
     @Then("^business rule template is persisted in database$")
     public void businessRuleTemplateIsExistedInTheDatabase() throws Exception {
-        connectionService.getResponseForGET(ENDPOINT_RULES_TEMPLATE_GET_ALL);
+        connectionService.getResponseForGET(ENDPOINT_RULES_TEMPLATE_GET_ALL + "?page=1&pageSize=10&sortBy=CreatedOn&order=descend");
         assertThat(resultState.getResult()).contains(Serenity.sessionVariableCalled("templateToDelete").toString());
     }
 
     @Then("^business rule status is '(.*)'$")
     public void businessRuleStatus(String expectedStatus) throws Exception {
 
-        connectionService.getResponseForGET(ENDPOINT_RULES_TEMPLATE_GET_ALL);
+        connectionService.getResponseForGET(ENDPOINT_RULES_TEMPLATE_GET_ALL + "?page=1&pageSize=10&sortBy=CreatedOn&order=descend");
         RuleTemplatesListResponseModel response = connectionService
                 .convertJsonToModel(resultState.getResult(), RuleTemplatesListResponseModel.class);
         List<TemplatesModel> listTemplates = response.getTemplates();
@@ -226,22 +232,6 @@ public class BusinessRulesSteps {
                 actualStatus = elementOfList.getStatus();
 
         assertThat(expectedStatus).isEqualTo(actualStatus);
-    }
-
-    @Then("document is existed in the database")
-    public void documentIsExistedInTheDatabase() throws Exception {
-        HashMap<String, String> map = new HashMap<>();
-        map = Serenity.sessionVariableCalled("previousRequestMap");
-
-        assertThat(resultState.getResult()).contains(map.get("Name"));
-    }
-
-    @Then("test record is removed from the database")
-    public void restRecordIsRemovedFromDatabase() throws Exception {
-        HashMap<String, String> map = new HashMap<>();
-        map = Serenity.sessionVariableCalled("previousRequestMap");
-        databaseService.executeDelete("RulesConfiguration.RuleTemplates.remove({'Name': '%s'})", map.get("Name"));
-        databaseService.executeDelete("RulesConfiguration.TemplateSets.remove({'PublishedTemplates.Name': '%s'})", map.get("Name"));
     }
 
     @Then("I check Template Set stored in Redis")

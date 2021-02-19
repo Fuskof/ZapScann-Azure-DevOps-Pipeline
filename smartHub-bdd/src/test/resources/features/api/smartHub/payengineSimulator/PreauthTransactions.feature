@@ -14,7 +14,6 @@ Feature: Payengine simulator
   @DISE-561
   Scenario: Pre-auth transaction with OK response
     Given I send a pre-auth trx to Payengine simulator with the following fields
-      | initialAmount | {INT:3..1000} |
       | currency      | USD           |
     Then the status code should be '200'
     And the body of the 'pre-auth' response contains the appropriate values for status

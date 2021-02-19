@@ -4,6 +4,7 @@ import com.github.javafaker.Faker;
 import lombok.SneakyThrows;
 import net.serenitybdd.core.Serenity;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -202,6 +203,23 @@ public class JsonValueGenerator {
      *                                                  {SERENITY:isNew} = "true"
      *                                                  {SERENITY:productIds} = "[Ljava.lang.Integer;@78b1cc93"
      * <p>
+     *  - {ENUM:E.F}                    Returns an Enum value, as a STRING, based on E - the Enum's short name
+     *                                      and F - the field name.
+     *                                  Both the short name and the field name ARE case sensitive.
+     *                                  Within the loaded clasess at runtime, there must be only one Enum with
+     *                                      the given short name AND with the given field. If there are multiple Enums
+     *                                      with the same short name but only one of them has the given field,
+     *                                      then the value of that field will be returned.
+     *                                  Examples:   Considering the following existing Enums:
+     *                                                  com.test.il.DAYSOFF {SUNDAY, MONDAY}
+     *                                                  com.test.row.DAYSOFF {SATURDAY, SUNDAY}
+     *                                                  com.test.del.il.DAYSOFF {Sunday, MONDAY}
+     *                                                  com.test.del.row.DaysOff {SATURDAY, sunday}
+     *                                              then we should expect the following outcomes:
+     *                                                  {ENUM:DAYSOFF.SATURDAY} = returns "SATURDAY"
+     *                                                  {ENUM:DAYSOFF.SUNDAY} = error, 2 Enums with the same name and field
+     *                                                  {ENUM:DAYSOFF.Monday} = error, no Enums with the given name and field
+     * <p>
      *  - {FAKER:S.R}                   Generates a STRING using the Java Faker library, based on S.R...Z,
      *                                  the chain of Faker methods to be used.
      *                                  Supports only methods without params, and the last method from the chain
@@ -362,6 +380,9 @@ public class JsonValueGenerator {
                     break;
                 case "serenity":
                     returnSerenityValue();
+                    break;
+                case "enum":
+                    returnEnumValue();
                     break;
                 case "faker":
                     generateFakerValue();
@@ -583,6 +604,50 @@ public class JsonValueGenerator {
             if (!Objects.isNull(value)) {
                 populateValue(value, JsonFieldType.STRING);
             }
+        }
+    }
+
+    private void returnEnumValue() {
+        String enumName = initialPattern.split(":")[1].split("\\.")[0];
+        String enumValue = initialPattern.split(":")[1].split("\\.")[1];
+        List<Class> loadedClasses;
+        List<Class<Enum>> matchingClasses = new ArrayList<>();
+        Field field;
+
+        try {
+            field = ClassLoader.class.getDeclaredField("classes");
+            field.setAccessible(true);
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            loadedClasses = (List<Class>) field.get(classLoader);
+
+            for (Class cls : loadedClasses) {
+                String classSimpleName = cls.getName().split("\\.")[cls.getName().split("\\.").length - 1];
+                if (classSimpleName.equals(enumName) && cls.isEnum()) {
+                    for (Object value : cls.getEnumConstants()) {
+                        if (value.toString().equals(enumValue)) {
+                            matchingClasses.add(cls);
+                        }
+                    }
+                }
+            }
+
+            if (matchingClasses.size() < 1) {
+                throw new ClassNotFoundException(String.format("No enum found with short name: %s and field: %s",
+                        enumName, enumValue));
+            } else if (matchingClasses.size() > 1) {
+                throw new RuntimeException(String.format("%d enum classes found with short name: %s and field: %s",
+                        matchingClasses.size(), enumName, enumValue));
+            } else {
+                for (Object value : matchingClasses.get(0).getEnumConstants()) {
+
+                    if (value.toString().equals(enumValue)) {
+                        populateValue(value.toString(), JsonFieldType.STRING);
+                        break;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -1041,6 +1106,7 @@ public class JsonValueGenerator {
 //                "{SerENItY:boolValue}?",
 //                "{SERenity:arrayValue}",
 //                "< {sEReNity:missingValue} >",
+//                "{ENUM:DummyEnum.DummyField}",
 //                "{FAKER:NAME.firstname}",
 //                "Faker value: {faker:Address.StreetAddress}",
 //                "{TRUE}",

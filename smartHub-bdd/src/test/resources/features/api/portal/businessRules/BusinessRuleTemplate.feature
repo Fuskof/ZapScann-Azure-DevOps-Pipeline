@@ -19,9 +19,6 @@ Feature: Save and display business rule template
       | type           | Routing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
     Then the status code should be '200'
     And business rule template is persisted in database
-#    And document is existed in the database
-#    And test record is removed from the database
-
 
   @DISE-410
   Scenario: I create new business rule template with type Validation
@@ -32,9 +29,6 @@ Feature: Save and display business rule template
       | type           | Validation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
     Then the status code should be '200'
     And business rule template is persisted in database
-#    And document is existed in the database
-#    And test record is removed from the database
-
 
   @DISE-410
   Scenario: I try to create new business rule template with empty value of RuleXml

@@ -7,7 +7,7 @@ Feature: Verify record of trx request/ response in the Trx Registry
      | currency | EUR |
    Then the status code should be '200'
    And the 'debit' request should be recorded in Trx Registry
-   And the trx response should be recorded in Trx Registry
+   And the 'debit' response should be recorded in Trx Registry
 
   @DISE-257 @DISE-837
   Scenario: Verify record of Pre-auth trx in the Trx Registry
@@ -15,7 +15,7 @@ Feature: Verify record of trx request/ response in the Trx Registry
       | currency | USD |
     Then the status code should be '200'
     And the 'pre-auth' request should be recorded in Trx Registry
-    And the trx response should be recorded in Trx Registry
+    And the 'pre-auth' response should be recorded in Trx Registry
 
 
   @DISE-934 @DISE-1103 @DISE-966
@@ -23,7 +23,7 @@ Feature: Verify record of trx request/ response in the Trx Registry
     Given I 'cancel' a transaction with specific fields:
       | currency | USD |
     And the 'cancel' request should be recorded in Trx Registry
-    And the trx response should be recorded in Trx Registry
+    And the 'cancel' response should be recorded in Trx Registry
 
 
   @DISE-934 @DISE-1104 @DISE-966
@@ -31,4 +31,4 @@ Feature: Verify record of trx request/ response in the Trx Registry
     Given I 'capture' a transaction with specific fields:
       | currency | USD |
     And the 'capture' request should be recorded in Trx Registry
-    And the trx response should be recorded in Trx Registry
+    And the 'capture' response should be recorded in Trx Registry

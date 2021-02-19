@@ -7,7 +7,6 @@ Feature: Capture request validation
   @DISE-933 @DISE-1253
   Scenario Outline: Capture transaction - validate error code <fieldErrorCode> and associated error message
     Given I send a 'preauth' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'capture' a transaction with specific fields:
       | <fieldPath> | <fieldValue> |
@@ -67,7 +66,6 @@ Feature: Capture request validation
   @DISE-933 @DISE-1253
   Scenario Outline: Capture transaction - validate basket field with error code <fieldErrorCode> and associated error message
     Given I send a 'preauth' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'capture' a transaction with specific fields:
       | <fieldPath>     | <fieldValue> |
@@ -83,7 +81,6 @@ Feature: Capture request validation
   @DISE-933 @DISE-1253
   Scenario: Capture transaction - validate multiple error codes and associated error messages
     Given I send a 'preauth' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'capture' a transaction with specific fields:
       | initialAmount           | {-INT:2}     |
@@ -102,7 +99,6 @@ Feature: Capture request validation
   @DISE-933 @DISE-1253
   Scenario Outline: Capture transaction - validate values for fields with sets of accepted inputs
     Given I send a 'preauth' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'capture' a transaction with specific fields:
       | <fieldPath> | <fieldValue> |
@@ -120,7 +116,6 @@ Feature: Capture request validation
   @DISE-933 @DISE-1253
   Scenario: Capture transaction - validate accepted values for optional fields
     Given I send a 'preauth' transaction request with specific fields:
-      | initialAmount | {LONG:3..999} |
       | currency      | USD           |
     When I 'capture' a transaction with specific fields:
       | description        | {FAKER:HARRYPOTTER.QUOTE} |

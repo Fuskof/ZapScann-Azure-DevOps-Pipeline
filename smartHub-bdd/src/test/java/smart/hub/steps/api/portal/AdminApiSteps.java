@@ -17,11 +17,10 @@ import smart.hub.helpers.Helpers;
 import smart.hub.helpers.generators.JsonObjectGenerator;
 import smart.hub.helpers.generators.JsonValueGenerator;
 import smart.hub.mappings.api.enums.proxyAPI.transaction.SourceKeyEnum;
-import smart.hub.mappings.api.models.request.adminAPI.RuleConfigurationSaveRequestModel;
+import smart.hub.mappings.api.models.request.adminAPI.integrationManager.ConfigurationItem;
 import smart.hub.mappings.api.models.request.adminAPI.integrationManager.UpdateConfigurationsRequestModel;
 import smart.hub.mappings.api.models.request.adminAPI.merchants.MerchantBodyModel;
 import smart.hub.mappings.api.models.request.adminAPI.merchants.OnBoardMerchantModel;
-import smart.hub.mappings.api.models.response.adminAPI.RulesConfigurationGetResponseModel;
 import smart.hub.mappings.api.models.response.adminAPI.UpdateConfigurationsResponseModel;
 import smart.hub.mappings.api.models.response.adminAPI.integrationManager.GetConfigurationsResponseModel;
 import smart.hub.mappings.api.models.response.adminAPI.merchants.*;
@@ -198,39 +197,6 @@ public class AdminApiSteps {
         assertThat(onBoardResponseForPostModels[0].getType()).contains(type);
     }
 
-    @When("^I send post request to boarding merchant$")
-    public void iSendPostRequestToBoardingMerchant() throws Exception {
-        String onBoardedExternalId = Serenity.sessionVariableCalled("onBoardedExternalId");
-        OnBoardMerchantModel onBoardMerchantModel = new OnBoardMerchantModel();
-        if (onBoardedExternalId == null) onBoardedExternalId = "abracadabra";
-        onBoardMerchantModel.setMerchantId(onBoardedExternalId);
-        connectionService.getResponseForPOST(ENDPOINT_ONBOARD_MERCHANTS, connectionService.convertToJson(onBoardMerchantModel));
-    }
-
-    @When("^I find a merchant with status '(.*)'$")
-    public void iFinfMerchantWithStatus(String statusOfMerchant) throws Exception {
-        GetAllExternalMerchantsResponseModel[] getAllMerchantsResponseArray = connectionService
-                .convertJsonToModel(resultState.getResult(), GetAllExternalMerchantsResponseModel[].class);
-        for (GetAllExternalMerchantsResponseModel el : getAllMerchantsResponseArray)
-            if (el.getStatus().contains(statusOfMerchant)) {
-                Serenity.setSessionVariable("onBoardedMerchantId").to(el.getExternalId());
-                break;
-            }
-    }
-
-    @Then("^I send put request to assign to merchant status '(.*)'$")
-    public void iSendPutRequestToAssignToMerchantStatus(String statusOfMerchant) throws Exception {
-        String onBoardedMerchantId = Serenity.sessionVariableCalled("onBoardedMerchantId");
-        String request = "?merchantId=" + onBoardedMerchantId + "&status=" + statusOfMerchant;
-        connectionService.getResponseForPUT(ENDPOINT_CHANGE_MERCHANT_STATUS + request, "");
-    }
-
-    @Then("^the response contains id of boarded merchant$")
-    public void responseContainsIdOfBoardedMerchant() {
-        String onBoardedExternalId = Serenity.sessionVariableCalled("onBoardedExternalId");
-        assertThat(resultState.getRequestJson().contains(onBoardedExternalId)).isTrue();
-    }
-
     @Then("^the body of GetAllExtPortalMerchants response contains '(.*)' and '(.*)'$")
     public void getAllExtMerchantResponseContainsStrings(String id, String name) {
         GetExternalMerchantsResponseModel[] getAllMerchants = connectionService.convertJsonToModel(resultState.getResult(), GetExternalMerchantsResponseModel[].class);
@@ -267,8 +233,13 @@ public class AdminApiSteps {
     @SneakyThrows
     @Given("I update a Configuration with random fields")
     public void iUpdateAConfigurationWithRandomFields() {
-        connectionService.getResponseForPOST(ENDPOINT_UPDATE_INTEGRATION_MANAGER_CONFIGURATIONS, connectionService.convertToJson(JsonObjectGenerator.generateJsonObject(UpdateConfigurationsRequestModel.class)));
-        Serenity.setSessionVariable("key").to(help.getNode("key", "configurationItem"));
+        String request = connectionService.convertToJson(JsonObjectGenerator.generateJsonObject(UpdateConfigurationsRequestModel.class));
+        connectionService.getResponseForPOST(ENDPOINT_UPDATE_INTEGRATION_MANAGER_CONFIGURATIONS, request);
+        UpdateConfigurationsRequestModel updateConfigurationsRequestModel = connectionService.convertJsonToModel(request, UpdateConfigurationsRequestModel.class);
+        ConfigurationItem configurationItem =
+                connectionService.convertJsonToModel(updateConfigurationsRequestModel.getConfigurationItem().toString(), ConfigurationItem.class);
+        String key = configurationItem.getKey().toString();
+        Serenity.setSessionVariable("key").to(key);
     }
 
     @Given("the body of Update Configuration response contains status '(.*)'$")
@@ -295,77 +266,6 @@ public class AdminApiSteps {
     public void iRetrieveAConfigurationForAnInvalidKey(String key) {
         key = new JsonValueGenerator().generateJsonValue(key).getStringValue();
         connectionService.getResponseForGET(ENDPOINT_GET_INTEGRATION_MANAGER_CONFIGURATIONS + key);
-    }
-
-    @SneakyThrows
-    @Given("I save a rule with specific fields:")
-    public void iSaveARuleWithSpecificFields(@Transpose RuleConfigurationSaveRequestModel json) {
-        HashMap<String, String> savedRule = new HashMap<>();
-
-        connectionService.getResponseForPOST(ENDPOINT_RULES_CONFIGURATION_SAVE, connectionService.convertToJson(json));
-
-        savedRule.put("merchantId", help.getNode("merchantId"));
-        savedRule.put("globalId", help.getNode("globalId"));
-        savedRule.put("ruleId", help.getNode("ruleId"));
-
-        Serenity.setSessionVariable("previousRequestMap").to(savedRule);
-    }
-
-    @SneakyThrows
-    @Given("I update the Rule of the previously saved merchant Id")
-    public void iUpdateThePreviousCreatedRuleForMerchantId(@Transpose RuleConfigurationSaveRequestModel json) {
-        HashMap<String, String> previousRequestMap = Serenity.sessionVariableCalled("previousRequestMap");
-
-        String jsonString = connectionService.convertToJson(json);
-        resultState.setRequestJson(jsonString);
-        jsonString = help.modifySingleNodeJson("merchantId", previousRequestMap.get("merchantId"));
-
-        connectionService.getResponseForPOST(ENDPOINT_RULES_CONFIGURATION_SAVE, jsonString);
-    }
-
-    @SneakyThrows
-    @Given("I update the Rule of the previously saved global Id")
-    public void iUpdateThePreviousCreatedRuleForGlobalId(@Transpose RuleConfigurationSaveRequestModel json) {
-        HashMap<String, String> previousRequestMap = Serenity.sessionVariableCalled("previousRequestMap");
-
-        String jsonString = connectionService.convertToJson(json);
-        resultState.setRequestJson(jsonString);
-        jsonString = help.modifySingleNodeJson("globalId", previousRequestMap.get("globalId"));
-
-        connectionService.getResponseForPOST(ENDPOINT_RULES_CONFIGURATION_SAVE, jsonString);
-    }
-
-    @SneakyThrows
-    @When("I retrieve the rule for the previously used '(.*)'$")
-    public void iRetrieveTheRuleIdForThePreviouslyUsedId(String id) {
-        HashMap<String, String> previousRequestMap = Serenity.sessionVariableCalled("previousRequestMap");
-
-        if (id.equals("merchantId")) {
-            id = previousRequestMap.get("merchantId");
-        } else {
-            id = previousRequestMap.get("globalId");
-        }
-
-        connectionService.getResponseForGET(ENDPOINT_RULES_CONFIGURATION_GET + id);
-    }
-
-    @Given("the response contains the previously used '(.*)'$")
-    public void theResponseContainsThePreviouslyUsedMerchantId(String id) {
-        HashMap<String, String> previousRequestMap = Serenity.sessionVariableCalled("previousRequestMap");
-        RulesConfigurationGetResponseModel response = connectionService.convertJsonToModel(resultState.getResult(), RulesConfigurationGetResponseModel.class);
-
-        if (id.equals("merchantId")) {
-            assertThat(response.getMerchantId()).contains(previousRequestMap.get(id));
-        } else {
-            assertThat(response.getGlobalId()).contains(previousRequestMap.get(id));
-        }
-    }
-
-    @SneakyThrows
-    @When("I publish the rule")
-    public void iPublishTheRule() {
-        HashMap<String, String> previousRequestMap = Serenity.sessionVariableCalled("previousRequestMap");
-        connectionService.getResponseForPOST(ENDPOINT_RULES_CONFIGURATION_PUBLISH + previousRequestMap.get("ruleId"));
     }
 }
 
