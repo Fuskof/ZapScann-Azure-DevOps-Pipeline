@@ -8,7 +8,7 @@ pool:
 steps:
 - task: CmdLine@2
   inputs:
-    script: 'docker run -u zap -p 8080:8080 -i -d owasp/zap2docker-stable --name ZAPTEST zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
+    script: 'docker run -u zap -p 8080:8080 --name ZAPTEST -i -d owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
   displayName: Running ZAP container
 - task: Maven@3
   inputs:
