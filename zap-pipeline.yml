@@ -25,7 +25,7 @@ steps:
     mavenAuthenticateFeed: false
     effectivePomSkip: false
     sonarQubeRunAnalysis: false
-  displayName: Start Automated Tests [QA]
+  displayName: Start Automated Tests
 
 - task: CmdLine@2
   inputs:
@@ -33,4 +33,4 @@ steps:
     script: 'curl -v GET $(CURLCMD)'
   condition: always()
   continueOnError: true
-  displayName: Test connection to ZAP APIs and executin a scan 
+  displayName: Connect to ZAP API using cURL
