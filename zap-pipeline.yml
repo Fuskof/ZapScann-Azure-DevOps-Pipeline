@@ -33,4 +33,4 @@ steps:
     script: 'curl -v GET $(CURLCMD)'
   condition: always()
   continueOnError: true
-  displayName: Connect to ZAP API using cURL
+  displayName: Executing ZAP API commands using cURL
