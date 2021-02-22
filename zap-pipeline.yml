@@ -11,12 +11,27 @@ steps:
     script: 'docker run -u zap -p 8080:8080 --name ZAPTEST -i -d owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
   displayName: Running ZAP container
   
-- task: CmdLine@2
+
+- task: Maven@3
   inputs:
-    script: 'mvn clean verify -DappConfig="AppConfigQA.properties" -Dserenity.proxy.http="127.0.0.1" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features" -PdontUseTheForks'
+    mavenPomFile: './smartHub-bdd/pom.xml'
+    goals: 'clean verify -PdontUseTheForks'
+    options: '-DappConfig="AppConfigQA.properties" -Dserenity.proxy.http="127.0.0.1" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
+    publishJUnitResults: true
+    testResultsFiles: './smartHub-bdd/target/site/serenity/'
+    testRunTitle: 'Help'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.11'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: false   
+  displayName: Start Tests
+
 
 - task: CmdLine@2
   inputs:
 #    script: 'docker exec ZAPTESTS zap-api-scan.py -t http://127.0.0.1:8080/JSON/core/view/sites/? -f openapi'
      script: 'curl -X GET http://127.0.0.1:8080/JSON/core/view/hosts/'
   displayName: Test connection to ZAP API
+  condition: always()
