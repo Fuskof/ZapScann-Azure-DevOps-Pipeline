@@ -10,21 +10,10 @@ steps:
   inputs:
     script: 'docker run -u zap -p 8080:8080 --name ZAPTEST -i -d owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
   displayName: Running ZAP container
-- task: Maven@3
+  
+- task: CmdLine@2
   inputs:
-    mavenPomFile: './smartHub-bdd/pom.xml'
-    goals: 'clean verify -PdontUseTheForks'
-    options: '-DappConfig="AppConfigQA.properties" -Dserenity.proxy.http="127.0.0.1" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
-    publishJUnitResults: true
-    testResultsFiles: './smartHub-bdd/target/site/serenity/'
-    testRunTitle: 'Help'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.11'
-    mavenVersionOption: 'Default'
-    mavenAuthenticateFeed: false
-    effectivePomSkip: false
-    sonarQubeRunAnalysis: false
-  displayName: Start Tests
+    script: 'mvn clean verify -DappConfig="AppConfigQA.properties" -Dserenity.proxy.http="127.0.0.1" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features" -PdontUseTheForks'
 
 - task: CmdLine@2
   inputs:
