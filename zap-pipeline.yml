@@ -15,7 +15,7 @@ steps:
   inputs:
     mavenPomFile: './smartHub-bdd/pom.xml'
     goals: 'clean verify -PdontUseTheForks'
-    options: '-DappConfig=$(QA) -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
+    options: '-DappConfig=$(APPCONFIGPROPERTIES) -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
     publishJUnitResults: true
     testResultsFiles: './smartHub-bdd/target/site/serenity/'
     testRunTitle: 'Help'
@@ -30,7 +30,7 @@ steps:
 - task: CmdLine@2
   inputs:
 #   script: 'docker exec ZAPTEST zap-api-scan.py -t http://localhost:8080/JSON/core/view/sites/ -f openapi'
-   script: 'curl -v GET $(VIEW_VERSION)'
+   script: 'curl -v GET $(CURL_VARIABLES)'
   condition: always()
   continueOnError: true
   displayName: Test connection to ZAP APIs and executin a scan 
