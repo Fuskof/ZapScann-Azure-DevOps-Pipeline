@@ -9,9 +9,8 @@ steps:
 - task: CmdLine@2
   inputs:
     script: 'docker run -u zap -p 8080:8080 --name ZAPTEST -i -d owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
-  displayName: Running ZAP container
+  displayName: Running ZAP Container
   
-
 - task: Maven@3
   inputs:
     mavenPomFile: './smartHub-bdd/pom.xml'
@@ -26,12 +25,11 @@ steps:
     mavenAuthenticateFeed: false
     effectivePomSkip: false
     sonarQubeRunAnalysis: false   
-  displayName: Start Tests
-
+  displayName: Start Tests via Maven
 
 - task: CmdLine@2
   inputs:
     script: 'docker exec ZAPTEST zap-api-scan.py -t http://127.0.0.1:8080/JSON/core/view/sites/ -f openapi'
-#     script: 'curl -v GET http://localhost:8080/JSON/core/view/sites/'
-  displayName: Test connection to ZAP API
+#    script: 'curl -v GET http://localhost:8080/JSON/core/view/sites/'
+  displayName: Test connection to ZAP APIs and executin a scan 
   condition: always()
