@@ -28,5 +28,6 @@ steps:
 
 - task: CmdLine@2
   inputs:
-    script: 'docker exec ZAPTESTS zap-api-scan.py -t http://127.0.0.1:8080/JSON/core/view/sites/? -f openapi'
+#    script: 'docker exec ZAPTESTS zap-api-scan.py -t http://127.0.0.1:8080/JSON/core/view/sites/? -f openapi'
+     script: 'curl -X GET http://127.0.0.1:8080/JSON/core/view/hosts/'
   displayName: Test connection to ZAP API
