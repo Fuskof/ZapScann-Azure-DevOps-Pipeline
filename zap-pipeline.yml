@@ -6,16 +6,15 @@ pool:
   vmImage: 'ubuntu-20.04'
 
 steps:
-#- task: CmdLine@2
-#  inputs:
-#    script: 'docker run -p 8090:8090 -d -i --name ZAPTESTS owasp/zap2docker-stable zap.sh -daemon -port 8090 -host 0.0.0.0'
-#  displayName: Running ZAP container
+- task: CmdLine@2
+  inputs:
+    script: 'docker run -u zap -p 8080:8080 -i -d owasp/zap2docker-stable --name ZAPTEST zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
+  displayName: Running ZAP container
 - task: Maven@3
   inputs:
-  
     mavenPomFile: './smartHub-bdd/pom.xml'
     goals: 'clean verify -PdontUseTheForks'
-    options: '-Dcucumber.filter.tags="@sanity" -DappConfig="AppConfigDEV.properties" -Dcucumber.features="src/test/resources/features"'
+    options: '-DappConfig="AppConfigQA.properties" -Dserenity.proxy.http="127.0.0.1" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
     publishJUnitResults: true
     testResultsFiles: './smartHub-bdd/target/site/serenity/'
     testRunTitle: 'Help'
@@ -25,17 +24,9 @@ steps:
     mavenAuthenticateFeed: false
     effectivePomSkip: false
     sonarQubeRunAnalysis: false
-- bash: |
-    sudo chmod o+x ./smartHub-bdd/target/site/serenity
+  displayName: Start Tests
 
-#- task: PublishBuildArtifacts@1
-#  inputs:
-#    PathtoPublish: '$(Build.Repository.LocalPath)/smartHub-bdd/target'
-#   ArtifactName: 'Full report'
-#    publishLocation: 'Container'
-#  displayName: Publish the report folder
-
-#- task: CmdLine@2
-# inputs:
-#    script: 'docker exec ZAPTESTS zap-cli -p 8090 status -t 120'
-# displayName: Checking zap status inside the container
+- task: CmdLine@2
+  inputs:
+    script: 'docker exec ZAPTESTS zap-api-scan.py -t http://127.0.0.1:8080/JSON/core/view/sites/? -f openapi'
+  displayName: Test connection to ZAP API
