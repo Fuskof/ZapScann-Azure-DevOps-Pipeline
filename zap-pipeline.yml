@@ -15,7 +15,7 @@ steps:
   inputs:
     mavenPomFile: './smartHub-bdd/pom.xml'
     goals: 'clean verify -PdontUseTheForks'
-    options: '-DappConfig="AppConfigQA.properties" -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
+    options: '-DappConfig=$(QA) -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
     publishJUnitResults: true
     testResultsFiles: './smartHub-bdd/target/site/serenity/'
     testRunTitle: 'Help'
@@ -24,13 +24,13 @@ steps:
     mavenVersionOption: 'Default'
     mavenAuthenticateFeed: false
     effectivePomSkip: false
-    sonarQubeRunAnalysis: false   
-  displayName: Start Tests via Maven
+    sonarQubeRunAnalysis: false
+  displayName: Start Automated Tests [QA]
 
 - task: CmdLine@2
   inputs:
-#    script: 'docker exec ZAPTEST zap-api-scan.py -t http://localhost:8080/JSON/core/view/sites/ -f openapi'
-   script: 'curl -v GET http://localhost:8080/JSON/core/view/sites/'
-  displayName: Test connection to ZAP APIs and executin a scan 
+#   script: 'docker exec ZAPTEST zap-api-scan.py -t http://localhost:8080/JSON/core/view/sites/ -f openapi'
+   script: 'curl -v GET $(VIEW_VERSION)'
   condition: always()
   continueOnError: true
+  displayName: Test connection to ZAP APIs and executin a scan 
