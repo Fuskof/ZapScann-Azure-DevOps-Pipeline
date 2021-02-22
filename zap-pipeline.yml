@@ -30,6 +30,7 @@ steps:
 - task: CmdLine@2
   inputs:
     script: 'docker exec ZAPTEST zap-api-scan.py -t http://localhost:8080/JSON/core/view/sites/ -f openapi'
-#    script: 'curl -v GET http://localhost:8080/JSON/core/view/sites/'
+#   script: 'curl -v GET http://localhost:8080/JSON/core/view/sites/'
   displayName: Test connection to ZAP APIs and executin a scan 
   condition: always()
+  continueOnError: true
