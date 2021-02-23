@@ -18,7 +18,7 @@ steps:
     options: '-DappConfig=$(APPCONFIGPROPERTIES) -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
     publishJUnitResults: true
     testResultsFiles: './smartHub-bdd/target/site/serenity/'
-    testRunTitle: 'Help'
+    testRunTitle: 'Smart Tests'
     javaHomeOption: 'JDKVersion'
     jdkVersionOption: '1.11'
     mavenVersionOption: 'Default'
