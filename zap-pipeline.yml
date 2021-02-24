@@ -40,7 +40,7 @@ steps:
   inputs:
     targetType: 'inline'
     script:
-      a = 'curl --trace - --trace-time -v -i GET $(CURLCMD)' && echo $a
+      a=$(curl --trace - --trace-time -v -i GET $(CURLCMD)) && echo $a
   condition: always()
   continueOnError: true
   displayName: CURL COMMAND
