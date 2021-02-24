@@ -27,13 +27,13 @@ steps:
     sonarQubeRunAnalysis: false
   displayName: Start Automated Tests
 
-- task: CmdLine@2
-  inputs:
+#- task: CmdLine@2
+#  inputs:
 #   script: 'docker exec ZAPTEST zap-api-scan.py -t http://localhost:8080/JSON/core/view/sites/ -f openapi'
-    script: 'curl -v GET $(CURLCMD)'
-  condition: always()
-  continueOnError: true
-  displayName: Executing ZAP API commands using cURL
+#    script: 'curl -v GET $(CURLCMD)'
+#  condition: always()
+#  continueOnError: true
+# displayName: Executing ZAP API commands using cURL
 
 - task: Bash@3
   inputs:
