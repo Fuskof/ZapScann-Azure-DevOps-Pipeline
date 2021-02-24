@@ -28,7 +28,7 @@ steps:
     effectivePomSkip: false
     sonarQubeRunAnalysis: false
   continueOnError: true
-  displayName: Run Automated Tests with -> [ $(APPCONFIGPROPERTIES)]
+  displayName: Run Automated Tests with -> [ $(APPCONFIGPROPERTIES) ]
 
 ######################### Test purpose task #####################
 #- task: CmdLine@2
