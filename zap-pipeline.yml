@@ -11,8 +11,8 @@ steps:
 
 - task: CmdLine@2
   inputs:
-    script: sudo apt-get update
-  displayName: jQuery vers 
+    script: sudo apt-get update && npm install jquery
+  displayName: jQuery install 
 
 - task: CmdLine@2
   inputs:
