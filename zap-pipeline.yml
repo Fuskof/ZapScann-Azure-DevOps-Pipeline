@@ -41,3 +41,5 @@ steps:
     script: |
       a = $(curl -v GET $(CURLCMD))
       echo $a'
+  condition: always()
+  continueOnError: true
