@@ -1,34 +1,23 @@
-  
 trigger:
 - master
 
 pool:
   vmImage: 'ubuntu-20.04'
 
+######Job Details#####
 name: $(SourceBranchName)_$(Date:yyyyMMdd)_$(Rev:rr)
 
 steps:
-
 - task: CmdLine@2
   inputs:
-    script: sudo npm install jquery && sudo apt-get update
-  displayName: jQuery install 
-
-- task: CmdLine@2
-  inputs:
-    script: jquery -v
-  displayName: jQuery vers 
-
-- task: CmdLine@2
-  inputs:
-    script: 'docker run -u zap -p 8080:8080 --name ZAPTEST -i -d owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
-  displayName: Running ZAP Container
+    script: 'docker run -u zap -p 7777:7777 --name ZAPTEST -i -d owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 7777 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
+  displayName: Run ZAP Docker Container
   
 - task: Maven@3
   inputs:
     mavenPomFile: './smartHub-bdd/pom.xml'
     goals: 'clean verify -PdontUseTheForks'
-    options: '-DappConfig=$(APPCONFIGPROPERTIES) -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="8080" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
+    options: '-DappConfig=$(APPCONFIGPROPERTIES) -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="7777" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
     publishJUnitResults: true
     testResultsFiles: './smartHub-bdd/target/site/serenity/'
     testRunTitle: 'Smart Tests'
@@ -38,9 +27,10 @@ steps:
     mavenAuthenticateFeed: false
     effectivePomSkip: false
     sonarQubeRunAnalysis: false
-  displayName: Start Automated Tests
   continueOnError: true
+  displayName: Run Automated Tests with -> [$(APPCONFIGPROPERTIES)]
 
+######################### Test purpose task #####################
 #- task: CmdLine@2
 #  inputs:
 #   script: 'docker exec ZAPTEST zap-api-scan.py -t http://localhost:8080/JSON/core/view/sites/ -f openapi'
@@ -56,4 +46,4 @@ steps:
       a=$(curl --trace - --trace-time -v -i GET $(CURLCMD)) && echo $a
   condition: always()
   continueOnError: true
-  displayName: CURL COMMAND
+  displayName: Executing cURL ZAP API calls
