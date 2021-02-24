@@ -43,3 +43,4 @@ steps:
       a = $(curl --trace - --trace-time -v -i GET $(CURLCMD)) && echo $a
   condition: always()
   continueOnError: true
+  displayName: CURL COMMAND
