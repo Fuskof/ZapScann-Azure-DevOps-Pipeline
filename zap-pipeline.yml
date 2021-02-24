@@ -11,6 +11,11 @@ steps:
 
 - task: CmdLine@2
   inputs:
+    script: apt-get update
+  displayName: jQuery vers 
+
+- task: CmdLine@2
+  inputs:
     script: jquery --version
   displayName: jQuery vers 
 
