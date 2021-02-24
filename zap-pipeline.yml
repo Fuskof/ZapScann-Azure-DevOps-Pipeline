@@ -38,8 +38,8 @@ steps:
 - task: Bash@3
   inputs:
     targetType: 'inline'
-    script: |
-      a = $(curl -v GET $(CURLCMD))
-      echo $a'
+    script:
+      a = $(curl --trace - --trace-time -v -i GET $(CURLCMD))
+      echo $a
   condition: always()
   continueOnError: true
