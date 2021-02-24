@@ -8,6 +8,12 @@ pool:
 name: $(SourceBranchName)_$(Date:yyyyMMdd)_$(Rev:rr)
 
 steps:
+
+- task: CmdLine@2
+  inputs:
+    script: jquery --version
+  displayName: jQuery vers 
+
 - task: CmdLine@2
   inputs:
     script: 'docker run -u zap -p 8080:8080 --name ZAPTEST -i -d owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 8080 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
