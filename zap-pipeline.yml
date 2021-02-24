@@ -34,3 +34,10 @@ steps:
   condition: always()
   continueOnError: true
   displayName: Executing ZAP API commands using cURL
+
+- task: Bash@3
+  inputs:
+    targetType: 'inline'
+    script: |
+      a = $(curl -v GET $(CURLCMD))
+      echo $a'
