@@ -28,12 +28,12 @@ steps:
     effectivePomSkip: false
     sonarQubeRunAnalysis: false
   continueOnError: true
-  displayName: Run Automated Tests with -> [$(APPCONFIGPROPERTIES)]
+  displayName: Run Automated Tests with -> [ $(APPCONFIGPROPERTIES)]
 
 ######################### Test purpose task #####################
 #- task: CmdLine@2
 #  inputs:
-#   script: 'docker exec ZAPTEST zap-api-scan.py -t http://localhost:8080/JSON/core/view/sites/ -f openapi'
+#   script: 'docker exec ZAPTEST zap-api-scan.py -t http://localhost:7777/JSON/core/view/sites/ -f openapi'
 #    script: 'curl -v GET $(CURLCMD)'
 #  condition: always()
 #  continueOnError: true
