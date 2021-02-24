@@ -5,6 +5,8 @@ trigger:
 pool:
   vmImage: 'ubuntu-20.04'
 
+name: $(SourceBranchName)_$(Date:yyyyMMdd)_$(Hours)_$(Minutes)
+
 steps:
 - task: CmdLine@2
   inputs:
