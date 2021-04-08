@@ -1,49 +1,368 @@
 trigger:
 - master
 
-pool:
-  vmImage: 'ubuntu-20.04'
-
-######Job Details#####
 name: $(SourceBranchName)_$(Date:yyyyMMdd)_$(Rev:rr)
 
-steps:
-- task: CmdLine@2
-  inputs:
-    script: 'docker run -u zap -p 7777:7777 --name ZAPTEST -i -d owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 7777 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
-  displayName: Run ZAP Docker Container
-  
-- task: Maven@3
-  inputs:
-    mavenPomFile: './smartHub-bdd/pom.xml'
-    goals: 'clean verify -PdontUseTheForks'
-    options: '-DappConfig=$(APPCONFIGPROPERTIES) -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="7777" -Dcucumber.filter.tags="@sanity" -Dcucumber.features="src/test/resources/features"'
-    publishJUnitResults: true
-    testResultsFiles: './smartHub-bdd/target/site/serenity/'
-    testRunTitle: 'Smart Tests'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.11'
-    mavenVersionOption: 'Default'
-    mavenAuthenticateFeed: false
-    effectivePomSkip: false
-    sonarQubeRunAnalysis: false
-  continueOnError: true
-  displayName: Run Automated Tests with -> [ $(APPCONFIGPROPERTIES) ]
+pool:
+     vmImage: 'ubuntu-latest'
 
-######################### Test purpose task #####################
-#- task: CmdLine@2
-#  inputs:
-#   script: 'docker exec ZAPTEST zap-api-scan.py -t http://localhost:7777/JSON/core/view/sites/ -f openapi'
-#    script: 'curl -v GET $(CURLCMD)'
-#  condition: always()
-#  continueOnError: true
-# displayName: Executing ZAP API commands using cURL
+jobs:
+- job: ZapTest_Job
+  timeoutInMinutes: 0
 
-- task: Bash@3
-  inputs:
-    targetType: 'inline'
-    script:
-      a=$(curl --trace - --trace-time -v -i GET $(CURLCMD)) && echo $a
-  condition: always()
-  continueOnError: true
-  displayName: Executing cURL ZAP API calls
+  steps:
+  - task: CmdLine@2
+    inputs:
+      script: 'docker run -u zap -p 7777:7777 --name ZAPTEST -i -d owasp/zap2docker-stable zap.sh -daemon -host 0.0.0.0 -port 7777 -config api.disablekey=true -config api.addrs.addr.name=.* -config api.addrs.addr.regex=true'
+    displayName: Run ZAP Docker Container
+  - task: CmdLine@2
+    inputs:
+      script: 'docker exec ZAPTEST bash -c "zap.sh -cmd -addonupdate ; zap.sh -cmd -addoninstall pscanrulesAlpha ; zap.sh -cmd -addoninstall pscanrulesBeta ; zap.sh -cmd -addoninstall ascanrulesAlpha ; zap.sh -cmd -addoninstall ascanrulesBeta ; zap.sh -cmd -addoninstall sqliplugin ; zap.sh -cmd -addoninstall attacksurfacedetector ; zap.sh -cmd -addoninstall tlsdebug ; zap.sh -cmd -addoninstall httpsInfo"'
+    displayName: Zap Container Addon Manipulations
+  - task: Maven@3
+    inputs:
+      mavenPomFile: './smartHub-bdd/pom.xml'
+      goals: 'clean verify -PdontUseTheForks'
+      options: '-DappConfig=$(APPCONFIGPROPERTIES) -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="7777" -Dcucumber.filter.tags="@smoke" -Dcucumber.features="src/test/resources/features"'
+      # options: '-DappConfig=$(APPCONFIGPROPERTIES) -Dserenity.proxy.http="localhost" -Dserenity.proxy.http_port="7777" -Dcucumber.features="src/test/resources/features"'
+      publishJUnitResults: true
+      testResultsFiles: './smartHub-bdd/target/site/serenity/'
+      testRunTitle: 'Smart Tests'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.11'
+      mavenVersionOption: 'Default'
+      mavenAuthenticateFeed: false
+      effectivePomSkip: false
+      sonarQubeRunAnalysis: false
+    continueOnError: true
+    displayName: Run Automated Tests with -> [ $(APPCONFIGPROPERTIES) ]
+# - task: Bash@3
+#   inputs:
+#     targetType: 'inline'
+#     script:
+#       a=$(curl --trace - --trace-time -v -i GET $(CURLCMD)) && echo $a
+#   condition: always()
+#   continueOnError: true
+#   displayName: Executing cURL ZAP API calls
+#   enabled: true
+  - task: Bash@3
+    name: Context
+    inputs:
+      targetType: 'inline'
+      script: |
+        # Get Context response after creating it
+        echo "Create a new context with NETS as name"
+        CONTEXT_RES=$(curl -s $(echo $(API_ENDPOINT)"/JSON/context/action/newContext/?contextName=NETS"))
+        echo "Context response: $CONTEXT_RES"
+      
+        # Parse context response
+        echo "Extract the ID of the context created"
+        CONTEXT_ID=$(echo $CONTEXT_RES | jq -r '.contextId')
+        echo "##vso[task.setvariable variable=CONTEXT_ID;]$CONTEXT_ID"
+        echo "Context ID is: $CONTEXT_ID"
+      
+        # Include NETS URLS into context
+        echo "Include ONLY NETS urls into context"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/context/action/includeInContext/?contextName=NETS&regex=.*")
+        echo ""
+      
+        # View URLs in Context Name
+        curl -s $(echo $(API_ENDPOINT)"/JSON/context/view/urls/?contextName=NETS")
+        echo ""
+    condition: always()
+    continueOnError: true
+    displayName: Setup Context of links to check
+    enabled: true
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        SPIDER_URL=$(echo $(API_ENDPOINT)"/JSON/spider/action/scan/?url=$(TARGET_URL)&maxChildren=&recurse=true&contextName=NETS&subtreeOnly=true")
+        echo "Spider URL is: $SPIDER_URL"
+        SPIDER_ID_RESP=$(curl -s $SPIDER_URL)
+        echo "Spider scan response: $SPIDER_ID_RESP"
+        SPIDER_ID=$(echo $SPIDER_ID_RESP | jq -r '.scan')
+        echo "Spider Scan Id: $SPIDER_ID"
+      
+        STATUS_URL=$(echo $(API_ENDPOINT)"/JSON/spider/view/status/?scanId="$SPIDER_ID)
+        echo "Status SPIDER: $STATUS_URL"
+      
+        SCAN_STATUS=0
+        until [ $SCAN_STATUS -eq 100 ]; do
+        sleep 5
+        # Get Scan status
+        SCAN_STATUS_RES=$(curl -s $STATUS_URL)
+        # Parse scan status
+        SCAN_STATUS=$(echo $SCAN_STATUS_RES | jq -r '.status')
+        # Display status
+        echo "Scan $SCAN_STATUS complete"
+        done
+        echo "Spider Scan Complete"
+      
+        echo "Spider Results are:"
+        SPIDER_RESULTS=$(curl -s $(echo $(API_ENDPOINT)"/JSON/spider/view/results/?scanId="$SPIDER_ID))
+        echo $SPIDER_RESULTS
+    condition: always()
+    continueOnError: true
+    displayName: Spider NETS content with ZAP
+    enabled: true
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        # Set Passive scan enabled
+        echo "Enable Passive scanning"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/pscan/action/setEnabled/?enabled=true")
+        echo ""
+      
+        # Set Passive scan for in scope ONLY links
+        echo "Set Passive scanning to run only for in scope Urls"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/pscan/action/setScanOnlyInScope/?onlyInScope=true")
+        echo ""
+      
+        # Get list of all passive scanners
+        echo "Display the Passive Scanners available"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/pscan/view/scanners/?")
+        echo ""
+      
+        # Set specific Technology stack for NETS project
+        echo "Exclude all technologies from Context"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/context/action/excludeAllContextTechnologies/?contextName=NETS")
+        echo ""
+        echo "Set only technologies required for NETS Context"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/context/action/includeContextTechnologies/?contextName=NETS&technologyNames=Db.PostgreSQL%2CLanguage.ASP%2CLanguage.JavaScript%2COS.Linux%2CWS.Tomcat%2CWS.Apache")
+        echo ""
+        echo "View included Technology List in NETS Context"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/context/view/includedTechnologyList/?contextName=NETS")
+        echo ""
+    condition: always()
+    continueOnError: true
+    displayName: Configure Passive scanner
+    enabled: true
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        STATUS_URL=$(echo $(API_ENDPOINT)"/JSON/pscan/view/recordsToScan/?zapapiformat=JSON&formMethod=GET&")
+        echo "Status URL: $STATUS_URL"
+      
+        SCAN_STATUS=1
+        until [ $SCAN_STATUS -eq 0 ]; do
+        sleep 10
+        # Get Scan status
+        SCAN_STATUS_RES=$(curl -s $STATUS_URL)
+        echo "Curl Output: $SCAN_STATUS_RES"
+        # Parse scan status
+        SCAN_STATUS=$(echo $SCAN_STATUS_RES | jq -r '.recordsToScan')
+        # Display status
+        echo "Scan Status = $SCAN_STATUS"
+        done
+        echo "Passive Scan Complete"
+    condition: always()
+    continueOnError: true
+    displayName: Run Passive scanner
+    enabled: true
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        # View Hosts per scan
+        echo "View Hosts per scan"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/view/optionHostPerScan/?")
+        echo ""
+      
+        # View Threads per host
+        echo "View Threads per host"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/view/optionThreadPerHost/?")
+        echo ""
+      
+        # Set Threads per host
+        echo "Set Threads per host"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/setOptionThreadPerHost/?Integer=3")
+        echo ""
+      
+        # Set Headers to be scanned as well
+        echo "Set Headers to be scanned as well"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/setOptionScanHeadersAllRequests/?Boolean=true")
+        echo ""
+      
+        # View Max rule duration
+        echo "View Max rule duration"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/view/optionMaxRuleDurationInMins/?")
+        echo ""
+      
+        # Set Rule duration to 0(Undefined) minutes
+        echo "Set Rule duration to 5 minutes"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/setOptionMaxRuleDurationInMins/?Integer=5")
+        echo ""
+      
+        # View Max Scan duration
+        echo "View Max Scan duration"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/view/optionMaxScanDurationInMins/?")
+        echo ""
+      
+        # Set Scan duration to 1 hour maximum
+        echo "Set Scan duration to 1 hour maximum"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/setOptionMaxScanDurationInMins/?Integer=60")
+        echo ""
+      
+        # Prompt in attack mode - SHOULD be FALSE
+        echo "Prompt in attack mode - SHOULD be FALSE"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/view/optionPromptInAttackMode/?")
+        echo ""
+      
+        # Set prompt in attack mode to FALSE
+        echo "Set prompt in attack mode to FALSE"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/setOptionPromptInAttackMode/?Boolean=false")
+        echo ""
+      
+        # Create a scan policy
+        echo "Create a scan policy for IRIS setting the general Threshold and Attack Strength"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/addScanPolicy/?scanPolicyName=NETS_ASCAN_POLICY&alertThreshold=MEDIUM&attackStrength=HIGH")
+        echo ""
+      
+        # Disable all scanners for a policy
+        echo "Disable all scanners for a policy"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/disableAllScanners/?scanPolicyName=NETS_ASCAN_POLICY")
+        echo ""
+      
+        # Enable only relevant scanners for IRIS project
+        echo "Enable only relevant scanners for IRIS project"
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40026&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=10104&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=41&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=43&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40025&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40023&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40035&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=20015&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40028&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=0&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=10095&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40034&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=90018&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=30001&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=90034&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40003&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40014&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40016&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40017&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=90025&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=30002&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=20014&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=30003&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40008&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=90020&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40009&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=90019&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40018&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40022&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=90023&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=90021&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=90017&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=40031&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=50000&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=10047&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=10106&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=10058&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=20019&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=10048&scanPolicyName=NETS_ASCAN_POLICY")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/enableScanners/?ids=20012&scanPolicyName=NETS_ASCAN_POLICY")
+        echo ""
+      
+        # View all scan Policies for a certain Policy
+        echo "View all scan Policies for a certain Policy: 'NETS_ASCAN_POLICY' "
+        # curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/view/policies/?scanPolicyName=Default%20Policy&policyId=")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/view/policies/?scanPolicyName=NETS_ASCAN_POLICY&policyId=")
+        echo ""
+      
+        # Set default attack policy to policy named
+        echo "Set default attack policy to policy named: 'NETS_ASCAN_POLICY' "
+        # curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/setOptionDefaultPolicy/?String=Default%20Policy")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/ascan/action/setOptionDefaultPolicy/?String=NETS_ASCAN_POLICY")
+        echo ""
+    condition: always()
+    continueOnError: true
+    displayName: Setup Active scanner Policies and Scanners
+    enabled: true
+  - task: Bash@3
+    name: Atack
+    inputs:
+      targetType: 'inline'
+      script: |
+        SCAN_URL=$(echo $(API_ENDPOINT)"/JSON/ascan/action/scan/?url=&recurse=&inScopeOnly=&scanPolicyName=&method=&postData=&contextId=$(CONTEXT_ID)")
+        echo "Scan URL: $SCAN_URL"
+      
+        # Start Active ZAP Scan
+        SCAN_ID_RES=$(curl -s $SCAN_URL)
+        echo "Curl Output: $SCAN_ID_RES"
+      
+        # Parse for scan ID
+        SCAN_ID=$(echo $SCAN_ID_RES | jq -r '.scan')
+        # Display scan ID
+        echo "##vso[task.setvariable variable=SCAN_ID;]$SCAN_ID"
+        echo "Scan ID: $SCAN_ID"
+    condition: 
+    continueOnError: true
+    displayName: Active Attack with ZAP
+    enabled: true
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        SCANS=$(echo $(API_ENDPOINT)"/JSON/ascan/view/scans/?")
+      
+        # SCAN_URL=$(echo $(API_ENDPOINT)"/JSON/ascan/view/status/?zapapiformat=JSON&formMethod=GET&scanId=$(SCAN_ID)&")
+        SCAN_URL=$(echo $(API_ENDPOINT)"/JSON/ascan/view/status/?scanId=$(SCAN_ID)&")
+        echo "Scan Url: $SCAN_URL"
+      
+        SCAN_STATUS=0
+        until [ $SCAN_STATUS -eq 100 ]; do
+        sleep 1
+        # Get Scan status
+        SCAN_STATUS_RES=$(curl -s $SCAN_URL)
+        # Parse scan status
+        SCAN_STATUS=$(echo $SCAN_STATUS_RES | jq -r '.status')
+        # Display status
+        echo "Scan $SCAN_STATUS complete"
+        echo "Display scans:  $(curl -s $SCANS)"
+        done
+        echo "Active Scan Complete"
+      
+        # View the alerts of active scan
+        ALERTS=$(echo $(API_ENDPOINT)"/JSON/core/view/alerts/?baseurl=$(TARGET_URL)&start=0&count=10")
+        ALERTS_RES=$(curl -s $ALERTS)
+      
+        echo $ALERTS_RES
+      
+      
+        echo "Alert summary"
+        ALERTS_SUMMARY=$(echo $(API_ENDPOINT)"/JSON/alert/view/alertsSummary/?baseurl=$(TARGET_URL)")
+        ALERTS_SUMMARY_RES=$(curl -s $ALERTS_SUMMARY)
+      
+        echo $ALERTS_SUMMARY_RES
+    continueOnError: true
+    displayName: Verify Active Atack with ZAP is completed
+    enabled: true
+  - task: Bash@3
+    inputs:
+      targetType: 'inline'
+      script: |
+        mkdir zapReport
+        REPORT_URL=$(echo $(API_ENDPOINT)"/JSON/core/view/alerts/")
+        curl -s $(echo $(API_ENDPOINT)"/JSON/core/view/alerts/?zapapiformat=JSON&formMethod=GET&baseurl=$(TARGET_URL)") > ./zapReport/alerts.json
+        echo "Alert Report Generated"
+        curl -s $(echo $(API_ENDPOINT)"/OTHER/core/other/htmlreport/?formMethod=GET") > ./zapReport/zapreport.html
+        echo "HTML Report Generated"
+        curl -s $(echo $(API_ENDPOINT)"/OTHER/core/other/xmlreport/?formMethod=GET") > ./zapReport/zapreport.xml
+        echo "XML Report Generated"
+    condition: always()
+    continueOnError: true
+    displayName: Generate the reports
+    enabled: true
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(System.DefaultWorkingDirectory)/zapReport/'
+      ArtifactName: 'Zap Reports'
+      publishLocation: 'Container'
+    displayName: Creating Zap Reports Artifacts
